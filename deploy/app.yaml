@@ -1,0 +1,50 @@
+# Mockarty row #18 deploy acceptance fixture — service B.
+# A real HTTP workload: Prometheus serves /metrics on :9090 and the post-deploy
+# health window proves the deployment rolled out. The manifest is applied
+# server-side by Mockarty's kubernetes deployer, not by hand.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: row18-svc-b
+  labels:
+    app: row18-svc-b
+    mockarty.dev/row: "18"
+    mockarty.dev/service: svc-b
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: row18-svc-b
+  template:
+    metadata:
+      labels:
+        app: row18-svc-b
+        mockarty.dev/row: "18"
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: metrics-app
+          image: quay.io/prometheus/prometheus:v3.13.1-distroless
+          imagePullPolicy: IfNotPresent
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.path=/tmp/prometheus
+            - --storage.tsdb.retention.time=1h
+          ports:
+            - name: http
+              containerPort: 9090
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: row18-svc-b
+  labels:
+    app: row18-svc-b
+    mockarty.dev/row: "18"
+spec:
+  selector:
+    app: row18-svc-b
+  ports:
+    - name: http
+      port: 9090
+      targetPort: 9090
